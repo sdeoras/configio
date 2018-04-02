@@ -1,13 +1,12 @@
 package configio
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"reflect"
 	"testing"
 	"time"
-
-	"context"
 
 	"github.com/Sirupsen/logrus"
 )

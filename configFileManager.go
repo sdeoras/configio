@@ -1,10 +1,9 @@
 package configio
 
 import (
+	"context"
 	"io/ioutil"
 	"sync"
-
-	"context"
 
 	"github.com/Sirupsen/logrus"
 )
