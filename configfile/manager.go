@@ -36,7 +36,7 @@ func (m *manager) Init(ctx context.Context) (*manager, error) {
 		home = os.Getenv("USERPROFILE")
 	}
 
-	m.file = filepath.Join(home, "config", DefaultConfigDir, DefaultConfigFile)
+	m.file = filepath.Join(home, ".config", DefaultConfigDir, DefaultConfigFile)
 	m.log.WithField("func", "Init").WithField("config", m.file).Info()
 
 	if watcher, err := fsnotify.NewWatcher(); err != nil {
