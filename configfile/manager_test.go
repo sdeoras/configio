@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"reflect"
 	"testing"
+
 	"time"
 
 	"github.com/sdeoras/configio/simpleconfig"
@@ -13,7 +14,12 @@ import (
 )
 
 func TestNewWriter(t *testing.T) {
-	if err := NewWriter(context.Background()).Marshal(new(simpleconfig.Config).Rand()); err != nil {
+	writer, err := NewWriter(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := writer.Marshal(new(simpleconfig.Config).Rand()); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -29,7 +35,12 @@ func TestNewReader(t *testing.T) {
 	}
 
 	config2 := new(simpleconfig.Config)
-	if err := NewReader(context.Background()).Unmarshal(config2); err != nil {
+	reader, err := NewReader(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := reader.Unmarshal(config2); err != nil {
 		t.Fatal(err)
 	}
 
@@ -40,7 +51,12 @@ func TestNewReader(t *testing.T) {
 
 func TestNewReadWriter(t *testing.T) {
 	config := new(simpleconfig.Config).Rand()
-	readWriter := NewReadWriter(context.Background())
+
+	readWriter, err := NewReadWriter(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	if err := readWriter.Marshal(config); err != nil {
 		t.Fatal(err)
 	}
@@ -58,39 +74,44 @@ func TestNewReadWriter(t *testing.T) {
 func TestNewWatcher(t *testing.T) {
 	a, b, c := callbackFunc("a"), callbackFunc("b"), callbackFunc("c")
 	config := new(simpleconfig.Config).Rand()
-	manager := NewManager(context.Background())
+
+	manager, err := NewManager(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer manager.Close()
+
+	// register watch functions
 	ca, cb, cc := manager.Watch("a", nil, a), manager.Watch("b", nil, b), manager.Watch("c", nil, c)
 
+	// trigger config change
 	if err := manager.Marshal(config); err != nil {
 		t.Fatal(err)
 	}
 
-	if !reflect.DeepEqual(config, <-ca) {
-		t.Fatal("set and received config not matching")
+	// make sure watch notifications are received
+	select {
+	default:
+		<-ca
+		<-cb
+		<-cc
+		time.Sleep(time.Second)
+	case <-time.After(time.Second):
+		t.Fatal("did not receive watch in 1 second")
 	}
-
-	if !reflect.DeepEqual(config, <-cb) {
-		t.Fatal("set and received config not matching")
-	}
-
-	if !reflect.DeepEqual(config, <-cc) {
-		t.Fatal("set and received config not matching")
-	}
-
-	time.Sleep(time.Second)
 }
 
 func callbackFunc(name string) func(ctx context.Context, data interface{}, err error) <-chan error {
 	return func(ctx context.Context, data interface{}, err error) <-chan error {
-		done := make(chan error)
+		status := make(chan error)
 		go func() {
 			select {
 			case <-ctx.Done():
-				logrus.Info("context done ", name)
-			case done <- nil:
-				logrus.Info("executed ", name)
+				logrus.WithField("callback", name).Info("received context status")
+			case status <- nil:
+				logrus.WithField("callback", name).Info("sending status")
 			}
 		}()
-		return done
+		return status
 	}
 }

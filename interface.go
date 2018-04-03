@@ -1,7 +1,10 @@
 // configio defines a generic interface for config management
 package configio
 
-import "context"
+import (
+	"context"
+	"io"
+)
 
 // Marshaler defines the behavior of a type that can act as a config parameter
 // Any such type should provide serialization methods
@@ -12,26 +15,37 @@ type Marshaler interface {
 
 // ConfigManager defines an interface to access config params
 type ConfigManager interface {
-	ConfigReadWriter
-	ConfigWatcher
+	// Unmarshal unmarshals into marshaler
+	Unmarshal(config Marshaler) error
+	// Marshal marshals data in marshaler
+	Marshal(config Marshaler) error
+	// Watch registers a callback function
+	Watch(name string, data interface{},
+		f func(ctx context.Context, data interface{}, err error) <-chan error) <-chan struct{}
+	io.Closer
 }
 
 // ConfigReadWriter defines an interface to perform read/write on config params
 type ConfigReadWriter interface {
-	ConfigReader
-	ConfigWriter
+	// Unmarshal unmarshals into marshaler
+	Unmarshal(config Marshaler) error
+	// Marshal marshals data in marshaler
+	Marshal(config Marshaler) error
+	io.Closer
 }
 
 // ConfigReader defines an interface to perform read operation on config params
 type ConfigReader interface {
 	// Unmarshal unmarshals into marshaler
-	Unmarshal(marshaler Marshaler) error
+	Unmarshal(config Marshaler) error
+	io.Closer
 }
 
 // ConfigWriter defines an interface to perform write operation on config params
 type ConfigWriter interface {
 	// Marshal marshals data in marshaler
-	Marshal(marshaler Marshaler) error
+	Marshal(config Marshaler) error
+	io.Closer
 }
 
 // ConfigWatcher defines an interface to perform a watch on config changes.
@@ -41,5 +55,6 @@ type ConfigWriter interface {
 type ConfigWatcher interface {
 	// Watch registers a callback function
 	Watch(name string, data interface{},
-		f func(ctx context.Context, data interface{}, err error) <-chan error) <-chan Marshaler
+		f func(ctx context.Context, data interface{}, err error) <-chan error) <-chan struct{}
+	io.Closer
 }

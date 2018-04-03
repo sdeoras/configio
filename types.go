@@ -9,5 +9,5 @@ type Callback struct {
 	Func func(ctx context.Context, data interface{}, err error) <-chan error
 	Data interface{}
 	Err  error
-	Chan chan Marshaler
+	Chan chan struct{}
 }
