@@ -2,17 +2,17 @@ package simpleconfig
 
 import "encoding/json"
 
-// Config defines config params
+// Config defines a typical config params
 type Config struct {
-	PDName   string
-	PDSize   string
+	Name     string
+	Value    int
 	ReadOnly bool
 }
 
 // Rand populates config struct with random data
 func (config *Config) Rand() *Config {
-	config.PDName = "mypd"
-	config.PDSize = "500Gi"
+	config.Name = "mypd"
+	config.Value = 500
 	config.ReadOnly = true
 	return config
 }
