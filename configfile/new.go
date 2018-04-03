@@ -34,6 +34,12 @@ func NewReadWriter(ctx context.Context) (configio.ConfigReadWriter, error) {
 	return newManager(ctx)
 }
 
+// NewWatcher returns an instance of ConfigWatcher interface.
+// ConfigWatcher should be used by clients who only wish to watch config changes
+func NewWatcher(ctx context.Context) (configio.ConfigWatcher, error) {
+	return newManager(ctx)
+}
+
 // newManager returns instance of manager struct
 func newManager(ctx context.Context) (*manager, error) {
 	return new(manager).Init(ctx)
