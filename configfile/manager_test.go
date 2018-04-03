@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"reflect"
 	"testing"
-
 	"time"
 
 	"github.com/sdeoras/configio/simpleconfig"
