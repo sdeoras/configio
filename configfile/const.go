@@ -1,5 +1,6 @@
 package configfile
 
 const (
-	DefaultConfigFile = "/tmp/config.json"
+	DefaultConfigFile = "config.json"
+	DefaultConfigDir  = "configio"
 )

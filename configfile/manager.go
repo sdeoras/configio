@@ -3,6 +3,8 @@ package configfile
 import (
 	"context"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/sdeoras/configio"
@@ -21,10 +23,15 @@ type manager struct {
 
 // Init initializes newly instantiated manager
 func (m *manager) Init(ctx context.Context) *manager {
+	m.log = logrus.WithField("manager", "configio")
 	m.cb = make(map[string]*configio.Callback)
 	m.ctx = ctx
-	m.file = DefaultConfigFile
-	m.log = logrus.WithField("manager", "manager")
+	home := os.Getenv("HOME")
+	if len(home) == 0 {
+		home = os.Getenv("USERPROFILE")
+	}
+	m.file = filepath.Join(home, "config", DefaultConfigDir, DefaultConfigFile)
+	m.log.WithField("func", "Init").WithField("config", m.file).Info()
 	return m
 }
 
@@ -35,14 +42,15 @@ func (m *manager) SetConfigFile(fileName string) {
 
 // Unmarshal reads config file, unmarshals it into configio.Marshaler
 func (m *manager) Unmarshal(config configio.Marshaler) error {
-	b, err := ioutil.ReadFile(DefaultConfigFile)
+	log := m.log.WithField("func", "Unmarshal")
+	b, err := ioutil.ReadFile(m.file)
 	if err != nil {
-		m.log.Error(err)
+		log.Error(err)
 		return err
 	}
 
 	if err := config.Unmarshal(b); err != nil {
-		m.log.Error(err)
+		log.Error(err)
 		return err
 	}
 
@@ -52,17 +60,24 @@ func (m *manager) Unmarshal(config configio.Marshaler) error {
 // Marshal serializes input config and writes to config file.
 // Furthermore, it runs through registered callbacks
 func (m *manager) Marshal(config configio.Marshaler) error {
+	log := m.log.WithField("func", "Marshal")
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	b, err := config.Marshal()
 	if err != nil {
-		m.log.Error(err)
+		log.Error(err)
 		return err
 	}
 
-	if err := ioutil.WriteFile(DefaultConfigFile, b, 0666); err != nil {
-		m.log.Error(err)
+	dir, _ := filepath.Split(m.file)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	if err := ioutil.WriteFile(m.file, b, 0666); err != nil {
+		log.Error(err)
 		return err
 	}
 
@@ -85,6 +100,7 @@ func (m *manager) Watch(name string, data interface{}, f func(ctx context.Contex
 
 // execCallback executes callback
 func (m *manager) execCallback(name string, config configio.Marshaler) {
+	log := m.log.WithField("func", "execCallback")
 	cbd := m.cb[name]
 	err := cbd.Func(m.ctx, cbd.Data, cbd.Err)
 	readConfig, sentConfirmation := false, false
@@ -95,7 +111,7 @@ func (m *manager) execCallback(name string, config configio.Marshaler) {
 			readConfig = true
 		case cbd.Err = <-err:
 			if cbd.Err != nil {
-				m.log.Info(name, " executed unsuccessfully")
+				log.Info(name, " executed unsuccessfully")
 				go func() {
 					select {
 					case <-cbd.Func(m.ctx, cbd.Data, cbd.Err):
@@ -104,11 +120,11 @@ func (m *manager) execCallback(name string, config configio.Marshaler) {
 				}()
 				delete(m.cb, name)
 			} else {
-				m.log.Info(name, " executed successfully")
+				log.Info(name, " executed successfully")
 			}
 			sentConfirmation = true
 		case <-m.ctx.Done():
-			m.log.Error(name, "context done")
+			log.Error(name, "context done")
 			return
 		}
 		if readConfig && sentConfirmation {
