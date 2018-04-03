@@ -9,9 +9,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// configFileManager implements several config management interfaces for a
+// manager implements several config management interfaces for a
 // backend that is a file on the disk
-type configFileManager struct {
+type manager struct {
 	mu   sync.Mutex
 	ctx  context.Context
 	cb   map[string]*configio.Callback
@@ -19,22 +19,22 @@ type configFileManager struct {
 	file string
 }
 
-// Init initializes newly instantiated configFileManager
-func (m *configFileManager) Init(ctx context.Context) *configFileManager {
+// Init initializes newly instantiated manager
+func (m *manager) Init(ctx context.Context) *manager {
 	m.cb = make(map[string]*configio.Callback)
 	m.ctx = ctx
 	m.file = DefaultConfigFile
-	m.log = logrus.WithField("manager", "configFileManager")
+	m.log = logrus.WithField("manager", "manager")
 	return m
 }
 
 // SetConfigFile sets location of config file other than the default
-func (m *configFileManager) SetConfigFile(fileName string) {
+func (m *manager) SetConfigFile(fileName string) {
 	m.file = fileName
 }
 
 // Unmarshal reads config file, unmarshals it into configio.Marshaler
-func (m *configFileManager) Unmarshal(config configio.Marshaler) error {
+func (m *manager) Unmarshal(config configio.Marshaler) error {
 	b, err := ioutil.ReadFile(DefaultConfigFile)
 	if err != nil {
 		m.log.Error(err)
@@ -51,7 +51,7 @@ func (m *configFileManager) Unmarshal(config configio.Marshaler) error {
 
 // Marshal serializes input config and writes to config file.
 // Furthermore, it runs through registered callbacks
-func (m *configFileManager) Marshal(config configio.Marshaler) error {
+func (m *manager) Marshal(config configio.Marshaler) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -74,7 +74,7 @@ func (m *configFileManager) Marshal(config configio.Marshaler) error {
 }
 
 // Watch registers a function to watch on config changes and returns a channel on which clients can watch
-func (m *configFileManager) Watch(name string, data interface{}, f func(ctx context.Context, data interface{}, err error) <-chan error) <-chan configio.Marshaler {
+func (m *manager) Watch(name string, data interface{}, f func(ctx context.Context, data interface{}, err error) <-chan error) <-chan configio.Marshaler {
 	cbd := new(configio.Callback)
 	cbd.Func = f
 	cbd.Chan = make(chan configio.Marshaler)
@@ -84,7 +84,7 @@ func (m *configFileManager) Watch(name string, data interface{}, f func(ctx cont
 }
 
 // execCallback executes callback
-func (m *configFileManager) execCallback(name string, config configio.Marshaler) {
+func (m *manager) execCallback(name string, config configio.Marshaler) {
 	cbd := m.cb[name]
 	err := cbd.Func(m.ctx, cbd.Data, cbd.Err)
 	readConfig, sentConfirmation := false, false

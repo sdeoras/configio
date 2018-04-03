@@ -12,13 +12,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func TestNewConfigWriter(t *testing.T) {
+func TestNewWriter(t *testing.T) {
 	if err := NewWriter(context.Background()).Marshal(new(simpleconfig.Config).Rand()); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func TestNewConfigReader(t *testing.T) {
+func TestNewReader(t *testing.T) {
 	config := new(simpleconfig.Config).Rand()
 	b, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
@@ -38,7 +38,7 @@ func TestNewConfigReader(t *testing.T) {
 	}
 }
 
-func TestNewConfigReadWriter(t *testing.T) {
+func TestNewReadWriter(t *testing.T) {
 	config := new(simpleconfig.Config).Rand()
 	readWriter := NewReadWriter(context.Background())
 	if err := readWriter.Marshal(config); err != nil {
@@ -55,7 +55,7 @@ func TestNewConfigReadWriter(t *testing.T) {
 	}
 }
 
-func TestNewConfigWatcher(t *testing.T) {
+func TestNewWatcher(t *testing.T) {
 	a, b, c := callbackFunc("a"), callbackFunc("b"), callbackFunc("c")
 	config := new(simpleconfig.Config).Rand()
 	manager := NewManager(context.Background())

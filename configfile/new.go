@@ -34,7 +34,7 @@ func NewReadWriter(ctx context.Context) configio.ConfigReadWriter {
 	return newManager(ctx)
 }
 
-// newManager returns instance of configFileManager struct
-func newManager(ctx context.Context) *configFileManager {
-	return new(configFileManager).Init(ctx)
+// newManager returns instance of manager struct
+func newManager(ctx context.Context) *manager {
+	return new(manager).Init(ctx)
 }

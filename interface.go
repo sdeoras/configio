@@ -1,3 +1,4 @@
+// configio defines a generic interface for config management
 package configio
 
 import "context"
@@ -23,11 +24,13 @@ type ConfigReadWriter interface {
 
 // ConfigReader defines an interface to perform read operation on config params
 type ConfigReader interface {
+	// Unmarshal unmarshals into marshaler
 	Unmarshal(marshaler Marshaler) error
 }
 
 // ConfigWriter defines an interface to perform write operation on config params
 type ConfigWriter interface {
+	// Marshal marshals data in marshaler
 	Marshal(marshaler Marshaler) error
 }
 
@@ -36,6 +39,7 @@ type ConfigWriter interface {
 // If an error occurs on function execution, the function is called again with that
 // error passed in as an input argument and is removed from the registry
 type ConfigWatcher interface {
+	// Watch registers a callback function
 	Watch(name string, data interface{},
 		f func(ctx context.Context, data interface{}, err error) <-chan error) <-chan Marshaler
 }
