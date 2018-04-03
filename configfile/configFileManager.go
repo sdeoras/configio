@@ -1,54 +1,57 @@
-package configio
+package configfile
 
 import (
 	"context"
 	"io/ioutil"
 	"sync"
 
+	"github.com/sdeoras/configio"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	configFile = "/tmp/config.json"
 )
 
 // configFileManager implements several config management interfaces for a
 // backend that is a file on the disk
 type configFileManager struct {
-	mu  sync.Mutex
-	ctx context.Context
-	cb  map[string]*callbackData
-	log *logrus.Entry
+	mu   sync.Mutex
+	ctx  context.Context
+	cb   map[string]*configio.Callback
+	log  *logrus.Entry
+	file string
 }
 
 // Init initializes newly instantiated configFileManager
 func (m *configFileManager) Init(ctx context.Context) *configFileManager {
-	m.cb = make(map[string]*callbackData)
+	m.cb = make(map[string]*configio.Callback)
 	m.ctx = ctx
+	m.file = DefaultConfigFile
 	m.log = logrus.WithField("manager", "configFileManager")
 	return m
 }
 
-// Get reads config file, unmarshals it and returns as Marshaler interface
-func (m *configFileManager) Get() (Marshaler, error) {
-	b, err := ioutil.ReadFile(configFile)
-	if err != nil {
-		m.log.Error(err)
-		return nil, err
-	}
-
-	config := new(Config)
-	if err := config.Unmarshal(b); err != nil {
-		m.log.Error(err)
-		return nil, err
-	}
-
-	return config, nil
+// SetConfigFile sets location of config file other than the default
+func (m *configFileManager) SetConfigFile(fileName string) {
+	m.file = fileName
 }
 
-// Set serializes input config and writes to config file.
+// Unmarshal reads config file, unmarshals it into configio.Marshaler
+func (m *configFileManager) Unmarshal(config configio.Marshaler) error {
+	b, err := ioutil.ReadFile(DefaultConfigFile)
+	if err != nil {
+		m.log.Error(err)
+		return err
+	}
+
+	if err := config.Unmarshal(b); err != nil {
+		m.log.Error(err)
+		return err
+	}
+
+	return nil
+}
+
+// Marshal serializes input config and writes to config file.
 // Furthermore, it runs through registered callbacks
-func (m *configFileManager) Set(config Marshaler) error {
+func (m *configFileManager) Marshal(config configio.Marshaler) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -58,7 +61,7 @@ func (m *configFileManager) Set(config Marshaler) error {
 		return err
 	}
 
-	if err := ioutil.WriteFile(configFile, b, 0666); err != nil {
+	if err := ioutil.WriteFile(DefaultConfigFile, b, 0666); err != nil {
 		m.log.Error(err)
 		return err
 	}
@@ -71,31 +74,31 @@ func (m *configFileManager) Set(config Marshaler) error {
 }
 
 // Watch registers a function to watch on config changes and returns a channel on which clients can watch
-func (m *configFileManager) Watch(name string, data interface{}, f func(ctx context.Context, data interface{}, err error) <-chan error) <-chan Marshaler {
-	cbd := new(callbackData)
-	cbd.f = f
-	cbd.c = make(chan Marshaler)
-	cbd.data = data
+func (m *configFileManager) Watch(name string, data interface{}, f func(ctx context.Context, data interface{}, err error) <-chan error) <-chan configio.Marshaler {
+	cbd := new(configio.Callback)
+	cbd.Func = f
+	cbd.Chan = make(chan configio.Marshaler)
+	cbd.Data = data
 	m.cb[name] = cbd
-	return cbd.c
+	return cbd.Chan
 }
 
 // execCallback executes callback
-func (m *configFileManager) execCallback(name string, config Marshaler) {
+func (m *configFileManager) execCallback(name string, config configio.Marshaler) {
 	cbd := m.cb[name]
-	err := cbd.f(m.ctx, cbd.data, cbd.err)
+	err := cbd.Func(m.ctx, cbd.Data, cbd.Err)
 	readConfig, sentConfirmation := false, false
 	for {
 		select {
-		case cbd.c <- config:
+		case cbd.Chan <- config:
 			m.log.Info(name, " read config")
 			readConfig = true
-		case cbd.err = <-err:
-			if cbd.err != nil {
+		case cbd.Err = <-err:
+			if cbd.Err != nil {
 				m.log.Info(name, " executed unsuccessfully")
 				go func() {
 					select {
-					case <-cbd.f(m.ctx, cbd.data, cbd.err):
+					case <-cbd.Func(m.ctx, cbd.Data, cbd.Err):
 					case <-m.ctx.Done():
 					}
 				}()

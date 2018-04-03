@@ -23,12 +23,12 @@ type ConfigReadWriter interface {
 
 // ConfigReader defines an interface to perform read operation on config params
 type ConfigReader interface {
-	Get() (Marshaler, error)
+	Unmarshal(marshaler Marshaler) error
 }
 
 // ConfigWriter defines an interface to perform write operation on config params
 type ConfigWriter interface {
-	Set(config Marshaler) error
+	Marshal(marshaler Marshaler) error
 }
 
 // ConfigWatcher defines an interface to perform a watch on config changes.
@@ -36,5 +36,6 @@ type ConfigWriter interface {
 // If an error occurs on function execution, the function is called again with that
 // error passed in as an input argument and is removed from the registry
 type ConfigWatcher interface {
-	Watch(name string, data interface{}, f func(ctx context.Context, data interface{}, err error) <-chan error) <-chan Marshaler
+	Watch(name string, data interface{},
+		f func(ctx context.Context, data interface{}, err error) <-chan error) <-chan Marshaler
 }

@@ -1,4 +1,4 @@
-package configio
+package configfile
 
 import (
 	"context"
@@ -8,27 +8,28 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sdeoras/configio/simpleconfig"
 	"github.com/sirupsen/logrus"
 )
 
 func TestNewConfigWriter(t *testing.T) {
-	if err := NewConfigFileWriter(context.Background()).Set(new(Config).Rand()); err != nil {
+	if err := NewWriter(context.Background()).Marshal(new(simpleconfig.Config).Rand()); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestNewConfigReader(t *testing.T) {
-	config := new(Config).Rand()
+	config := new(simpleconfig.Config).Rand()
 	b, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := ioutil.WriteFile(configFile, b, 0666); err != nil {
+	if err := ioutil.WriteFile(DefaultConfigFile, b, 0666); err != nil {
 		t.Fatal(err)
 	}
 
-	config2, err := NewConfigFileReader(context.Background()).Get()
-	if err != nil {
+	config2 := new(simpleconfig.Config)
+	if err := NewReader(context.Background()).Unmarshal(config2); err != nil {
 		t.Fatal(err)
 	}
 
@@ -38,14 +39,14 @@ func TestNewConfigReader(t *testing.T) {
 }
 
 func TestNewConfigReadWriter(t *testing.T) {
-	config := new(Config).Rand()
-	readWriter := NewConfigFileReadWriter(context.Background())
-	if err := readWriter.Set(config); err != nil {
+	config := new(simpleconfig.Config).Rand()
+	readWriter := NewReadWriter(context.Background())
+	if err := readWriter.Marshal(config); err != nil {
 		t.Fatal(err)
 	}
 
-	config2, err := readWriter.Get()
-	if err != nil {
+	config2 := new(simpleconfig.Config)
+	if err := readWriter.Unmarshal(config2); err != nil {
 		t.Fatal(err)
 	}
 
@@ -56,11 +57,11 @@ func TestNewConfigReadWriter(t *testing.T) {
 
 func TestNewConfigWatcher(t *testing.T) {
 	a, b, c := callbackFunc("a"), callbackFunc("b"), callbackFunc("c")
-	config := new(Config).Rand()
-	manager := NewConfigFileManager(context.Background())
+	config := new(simpleconfig.Config).Rand()
+	manager := NewManager(context.Background())
 	ca, cb, cc := manager.Watch("a", nil, a), manager.Watch("b", nil, b), manager.Watch("c", nil, c)
 
-	if err := manager.Set(config); err != nil {
+	if err := manager.Marshal(config); err != nil {
 		t.Fatal(err)
 	}
 
