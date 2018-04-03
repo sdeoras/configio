@@ -90,14 +90,24 @@ func TestNewWatcher(t *testing.T) {
 
 	// make sure watch notifications are received
 	select {
-	default:
-		<-ca
-		<-cb
-		<-cc
-		time.Sleep(time.Second)
+	case <-ca:
 	case <-time.After(time.Second):
 		t.Fatal("did not receive watch in 1 second")
 	}
+
+	select {
+	case <-cb:
+	case <-time.After(time.Second):
+		t.Fatal("did not receive watch in 1 second")
+	}
+
+	select {
+	case <-cc:
+	case <-time.After(time.Second):
+		t.Fatal("did not receive watch in 1 second")
+	}
+
+	time.Sleep(time.Second)
 }
 
 func callbackFunc(name string) func(ctx context.Context, data interface{}, err error) <-chan error {
