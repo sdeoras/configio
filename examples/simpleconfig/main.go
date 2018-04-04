@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 
+	"fmt"
+
 	"github.com/sdeoras/configio/configfile"
 	"github.com/sdeoras/configio/simpleconfig"
 	"github.com/sirupsen/logrus"
@@ -22,9 +24,30 @@ func main() {
 
 	// change some config params
 	config.Name = "xyz"
+	config.Value = 7
+	config.ReadOnly = true
 
+	if jb, err := config.Marshal(); err != nil {
+		logrus.Fatal(err)
+	} else {
+		fmt.Println("config struct:")
+		fmt.Println(string(jb))
+	}
+
+	fmt.Println("saving to backend")
 	// marshal out to file
 	if err := manager.Marshal(config); err != nil {
 		logrus.Fatal(err)
+	}
+
+	if err := manager.Unmarshal(config); err != nil {
+		logrus.Fatal(err)
+	}
+
+	if jb, err := config.Marshal(); err != nil {
+		logrus.Fatal(err)
+	} else {
+		fmt.Println("reading back:")
+		fmt.Println(string(jb))
 	}
 }
