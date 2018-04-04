@@ -58,6 +58,17 @@ func (m *manager) setConfigFile(fileName string) error {
 	m.file = fileName
 
 	// recreate new watcher and context
+	if err := m.initWatch(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *manager) initWatch() error {
+	log := m.log.WithField("func", "initWatch")
+
+	// recreate new watcher and context
 	if watcher, err := fsnotify.NewWatcher(); err != nil {
 		log.Error(err)
 		return err
