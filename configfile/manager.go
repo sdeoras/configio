@@ -154,8 +154,8 @@ func (m *manager) watch() {
 	for {
 		select {
 		case event := <-m.watcher.Events:
-			if event.Op&fsnotify.Write == fsnotify.Write {
-				log.Info(event.Name)
+			log.Info(event.Name)
+			if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Rename == fsnotify.Rename {
 				m.mu.Lock()
 				for name, cbd := range m.cb {
 					name, cbd := name, cbd
@@ -163,10 +163,14 @@ func (m *manager) watch() {
 				}
 				m.mu.Unlock()
 			}
+			if event.Op&fsnotify.Remove == fsnotify.Remove {
+				log.Info("file removed, stopping watch")
+				return
+			}
 		case err := <-m.watcher.Errors:
 			log.Error(err)
 		case <-m.watchCtx.Done():
-			log.Info("stopping watch")
+			log.Info("context done, stopping watch")
 			return
 		}
 	}
