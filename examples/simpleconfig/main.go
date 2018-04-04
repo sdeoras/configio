@@ -11,14 +11,17 @@ import (
 func main() {
 	// create instance of config manager
 	// in this case create a local config file manager
-	manager := configfile.NewManager(context.Background())
+	manager, err := configfile.NewManager(context.Background())
+	if err != nil {
+		logrus.Fatal(err)
+	}
 
 	// create instance of config object
 	// config object must satisfy configio.Marshaler interface
 	config := new(simpleconfig.Config).Rand()
 
 	// change some config params
-	config.PDName = "xyz"
+	config.Name = "xyz"
 
 	// marshal out to file
 	if err := manager.Marshal(config); err != nil {
