@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"sync"
 
+	"fmt"
+
 	"github.com/fsnotify/fsnotify"
 	"github.com/sdeoras/configio"
 	"github.com/sirupsen/logrus"
@@ -31,32 +33,6 @@ func (m *manager) Init(ctx context.Context) (*manager, error) {
 	m.cb = make(map[string]*configio.Callback)
 	m.ctx = ctx
 
-	home := os.Getenv("HOME")
-	if len(home) == 0 {
-		home = os.Getenv("USERPROFILE")
-	}
-
-	m.file = filepath.Join(home, ".config", DefaultConfigDir, DefaultConfigFile)
-	m.log.WithField("func", "Init").WithField("config", m.file).Info()
-
-	if watcher, err := fsnotify.NewWatcher(); err != nil {
-		m.log.WithField("func", "Init").Error(err)
-		return nil, err
-	} else {
-		m.watcher = watcher
-		m.watchCtx, m.watchCancel = context.WithCancel(m.ctx)
-	}
-
-	// start watching
-	go m.watch()
-
-	if err := m.watcher.Add(m.file); err != nil {
-		m.log.WithField("func", "Init").Error(err)
-		// cancel watch context
-		m.watchCancel()
-		return nil, err
-	}
-
 	return m, nil
 }
 
@@ -68,15 +44,15 @@ func (m *manager) Close() error {
 	return m.watcher.Close()
 }
 
-// SetConfigFile sets location of config file other than the default
-func (m *manager) SetConfigFile(fileName string) error {
-	log := m.log.WithField("func", "SetConfigFile")
+// setConfigFile sets location of config file other than the default
+func (m *manager) setConfigFile(fileName string) error {
+	log := m.log.WithField("func", "setConfigFile")
 
-	// cancel watch context
-	m.watchCancel()
-
-	// close watcher
-	m.watcher.Close()
+	// mkdir and fstat check
+	if err := checkFile(fileName); err != nil {
+		log.Error(err)
+		return err
+	}
 
 	// update file
 	m.file = fileName
@@ -217,4 +193,28 @@ func (m *manager) execCallback(name string, cbd *configio.Callback) {
 			return
 		}
 	}
+}
+
+func checkFile(fileName string) error {
+	// mkdir and touch
+	dir, _ := filepath.Split(fileName)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+
+	if fileInfo, err := os.Stat(fileName); err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		} else {
+			if err := ioutil.WriteFile(fileName, []byte{}, 0666); err != nil {
+				return err
+			}
+		}
+	} else {
+		if fileInfo.IsDir() {
+			return fmt.Errorf("input option filename is a directory")
+		}
+	}
+
+	return nil
 }
