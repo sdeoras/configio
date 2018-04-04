@@ -154,7 +154,7 @@ func (m *manager) watch() {
 	for {
 		select {
 		case event := <-m.watcher.Events:
-			log.Info(event.Name)
+			log.WithField("file", event.Name).Info(event.Op)
 			if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Rename == fsnotify.Rename {
 				m.mu.Lock()
 				for name, cbd := range m.cb {
