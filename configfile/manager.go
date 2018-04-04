@@ -154,13 +154,15 @@ func (m *manager) watch() {
 	for {
 		select {
 		case event := <-m.watcher.Events:
-			log.Info(event.Name)
-			m.mu.Lock()
-			for name, cbd := range m.cb {
-				name, cbd := name, cbd
-				go m.execCallback(name, cbd)
+			if event.Op&fsnotify.Write == fsnotify.Write {
+				log.Info(event.Name)
+				m.mu.Lock()
+				for name, cbd := range m.cb {
+					name, cbd := name, cbd
+					go m.execCallback(name, cbd)
+				}
+				m.mu.Unlock()
 			}
-			m.mu.Unlock()
 		case err := <-m.watcher.Errors:
 			log.Error(err)
 		case <-m.watchCtx.Done():
@@ -168,6 +170,9 @@ func (m *manager) watch() {
 			return
 		}
 	}
+
+	log.Info("stopping watch")
+	return
 }
 
 // execCallback executes callback
