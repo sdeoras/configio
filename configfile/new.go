@@ -47,10 +47,7 @@ func NewWatcher(ctx context.Context, options ...interface{}) (configio.ConfigWat
 
 // newManager returns instance of manager struct
 func newManager(ctx context.Context, options ...interface{}) (*manager, error) {
-	m, err := new(manager).Init(ctx)
-	if err != nil {
-		return nil, err
-	}
+	m := new(manager).Init(ctx)
 
 	opt := make(map[string]interface{})
 	for i, option := range options {
@@ -77,9 +74,6 @@ func newManager(ctx context.Context, options ...interface{}) (*manager, error) {
 		}
 	} else {
 		home := os.Getenv("HOME")
-		if len(home) == 0 {
-			home = os.Getenv("USERPROFILE")
-		}
 		file := filepath.Join(home, ".config", DefaultConfigDir, DefaultConfigFile)
 		if err := m.setConfigFile(file); err != nil {
 			return nil, err

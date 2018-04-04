@@ -28,12 +28,12 @@ type manager struct {
 }
 
 // Init initializes newly instantiated manager
-func (m *manager) Init(ctx context.Context) (*manager, error) {
+func (m *manager) Init(ctx context.Context) *manager {
 	m.log = logrus.WithField("manager", "configio")
 	m.cb = make(map[string]*configio.Callback)
 	m.ctx = ctx
 
-	return m, nil
+	return m
 }
 
 // Close closes and performs cleanup if any
@@ -49,7 +49,7 @@ func (m *manager) setConfigFile(fileName string) error {
 	log := m.log.WithField("func", "setConfigFile")
 
 	// mkdir and fstat check
-	if err := checkFile(fileName); err != nil {
+	if err := initIfNotExists(fileName); err != nil {
 		log.Error(err)
 		return err
 	}
@@ -195,7 +195,7 @@ func (m *manager) execCallback(name string, cbd *configio.Callback) {
 	}
 }
 
-func checkFile(fileName string) error {
+func initIfNotExists(fileName string) error {
 	// mkdir and touch
 	dir, _ := filepath.Split(fileName)
 	if err := os.MkdirAll(dir, 0755); err != nil {
