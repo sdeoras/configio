@@ -2,7 +2,6 @@ package configfile
 
 import (
 	"context"
-
 	"fmt"
 	"os"
 	"path/filepath"

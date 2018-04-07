@@ -2,12 +2,11 @@ package configfile
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
-
-	"fmt"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/sdeoras/configio"
