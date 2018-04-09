@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/sdeoras/configio"
 )
@@ -59,11 +58,11 @@ func newManager(ctx context.Context, options ...interface{}) (*manager, error) {
 		}
 
 		if i < len(options)-1 {
-			opt[strings.ToLower(key)] = options[i+1]
+			opt[key] = options[i+1]
 		}
 	}
 
-	if option, present := opt[fileOption]; present {
+	if option, present := opt[OptFilePath]; present {
 		if file, ok := option.(string); !ok {
 			return nil, fmt.Errorf("option value for file should be a string")
 		} else {
@@ -73,7 +72,7 @@ func newManager(ctx context.Context, options ...interface{}) (*manager, error) {
 		}
 	} else {
 		home := os.Getenv("HOME")
-		file := filepath.Join(home, ".config", DefaultConfigDir, DefaultConfigFile)
+		file := filepath.Join(home, ".config", defaultConfigDir, defaultConfigFile)
 		if err := m.setConfigFile(file); err != nil {
 			return nil, err
 		}

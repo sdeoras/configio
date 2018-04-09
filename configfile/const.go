@@ -1,10 +1,11 @@
 package configfile
 
 const (
-	DefaultConfigFile = "config.json"
-	DefaultConfigDir  = "configio"
+	defaultConfigFile = "config.json"
+	defaultConfigDir  = "configio"
 )
 
+// options here can be used during instantiation of new manager
 const (
-	fileOption = "file"
+	OptFilePath = "file"
 )
