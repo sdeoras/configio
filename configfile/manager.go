@@ -126,7 +126,8 @@ func (m *manager) Unmarshal(config configio.Config) error {
 
 	// find value for key and unmarshal into object
 	if b, present := data[config.Key()]; !present {
-		return fmt.Errorf("no data available for the key:" + config.Key())
+		log.WithField("key", config.Key()).WithField("file", m.file).Error("no data available")
+		return fmt.Errorf("no data available")
 	} else {
 		if err := config.Unmarshal(b); err != nil {
 			log.Error(err)
