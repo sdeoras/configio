@@ -8,7 +8,10 @@ import (
 	"path/filepath"
 	"sync"
 
+	"encoding/json"
+
 	"github.com/fsnotify/fsnotify"
+	"github.com/google/uuid"
 	"github.com/sdeoras/configio"
 	"github.com/sirupsen/logrus"
 )
@@ -89,18 +92,34 @@ func (m *manager) initWatch() error {
 	return nil
 }
 
-// Unmarshal reads config file, unmarshals it into configio.Marshaler
-func (m *manager) Unmarshal(config configio.Marshaler) error {
+// Unmarshal reads config file, unmarshals it into configio.Config
+func (m *manager) Unmarshal(config configio.Config) error {
 	log := m.log.WithField("func", "Unmarshal")
-	b, err := ioutil.ReadFile(m.file)
-	if err != nil {
-		log.Error(err)
-		return err
+
+	if len(config.Key()) == 0 {
+		return fmt.Errorf("config key is empty")
 	}
 
-	if err := config.Unmarshal(b); err != nil {
+	data := make(map[string][]byte)
+
+	// read from file and unmarshal into map
+	if b, err := ioutil.ReadFile(m.file); err != nil {
 		log.Error(err)
 		return err
+	} else {
+		if err := json.Unmarshal(b, &data); err != nil {
+			return err
+		}
+	}
+
+	// find value for key and unmarshal into object
+	if b, present := data[config.Key()]; !present {
+		return fmt.Errorf("no data available for the key:" + config.Key())
+	} else {
+		if err := config.Unmarshal(b); err != nil {
+			log.Error(err)
+			return err
+		}
 	}
 
 	return nil
@@ -108,15 +127,29 @@ func (m *manager) Unmarshal(config configio.Marshaler) error {
 
 // Marshal serializes input config and writes to config file.
 // Furthermore, it runs through registered callbacks
-func (m *manager) Marshal(config configio.Marshaler) error {
+func (m *manager) Marshal(config configio.Config) error {
 	log := m.log.WithField("func", "Marshal")
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	b, err := config.Marshal()
-	if err != nil {
+	data := make(map[string][]byte)
+
+	// read from file and unmarshal into map
+	if b, err := ioutil.ReadFile(m.file); err != nil {
 		log.Error(err)
 		return err
+	} else {
+		if err := json.Unmarshal(b, &data); err != nil {
+			return err
+		}
+	}
+
+	if b, err := config.Marshal(); err != nil {
+		log.Error(err)
+		return err
+	} else {
+		// set config in map
+		data[config.Key()] = b
 	}
 
 	dir, _ := filepath.Split(m.file)
@@ -125,9 +158,14 @@ func (m *manager) Marshal(config configio.Marshaler) error {
 		return err
 	}
 
-	if err := ioutil.WriteFile(m.file, b, 0666); err != nil {
+	if b, err := json.MarshalIndent(data, "", "  "); err != nil {
 		log.Error(err)
 		return err
+	} else {
+		if err := ioutil.WriteFile(m.file, b, 0666); err != nil {
+			log.Error(err)
+			return err
+		}
 	}
 
 	return nil
@@ -225,8 +263,14 @@ func initIfNotExists(fileName string) error {
 		if !os.IsNotExist(err) {
 			return err
 		} else {
-			if err := ioutil.WriteFile(fileName, []byte{}, 0666); err != nil {
+			data := make(map[string][]byte)
+			data[uuid.New().String()] = []byte{0, 1, 2}
+			if b, err := json.MarshalIndent(data, "", "  "); err != nil {
 				return err
+			} else {
+				if err := ioutil.WriteFile(fileName, b, 0666); err != nil {
+					return err
+				}
 			}
 		}
 	} else {

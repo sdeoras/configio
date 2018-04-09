@@ -1,9 +1,14 @@
 package simpleconfig
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/google/uuid"
+)
 
 // Config defines a typical config params
 type Config struct {
+	key      string
 	Name     string
 	Value    int
 	ReadOnly bool
@@ -14,7 +19,17 @@ func (config *Config) Rand() *Config {
 	config.Name = "mypd"
 	config.Value = 500
 	config.ReadOnly = true
+	config.key = uuid.New().String()
 	return config
+}
+
+func (config *Config) Init(key string) *Config {
+	config.key = key
+	return config
+}
+
+func (config *Config) Key() string {
+	return config.key
 }
 
 // Marshal defines serialization for the receiver type

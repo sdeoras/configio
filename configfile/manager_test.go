@@ -24,7 +24,7 @@ func TestNewWriter(t *testing.T) {
 
 func TestNewReader(t *testing.T) {
 	config := new(simpleconfig.Config).Rand()
-	config2 := new(simpleconfig.Config)
+	config2 := new(simpleconfig.Config).Init(config.Key())
 
 	reader, err := NewReader(context.Background())
 	if err != nil {
@@ -53,7 +53,7 @@ func TestNewReader(t *testing.T) {
 
 func TestNewReadWriter(t *testing.T) {
 	config := new(simpleconfig.Config).Rand()
-	config2 := new(simpleconfig.Config)
+	config2 := new(simpleconfig.Config).Init(config.Key())
 
 	readWriter, err := NewReadWriter(context.Background())
 	if err != nil {
