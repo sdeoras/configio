@@ -10,8 +10,8 @@ import (
 )
 
 // NewManager returns instance of ConfigManager interface.
-// ConfigManager should be used by clients requiring full config management
-// features
+// ConfigManager should be used by clients who wish to read and write config
+// and are not going to perform a watch
 func NewManager(ctx context.Context, options ...interface{}) (configio.ConfigManager, error) {
 	return newManager(ctx, options...)
 }
@@ -30,16 +30,16 @@ func NewWriter(ctx context.Context, options ...interface{}) (configio.ConfigWrit
 	return newManager(ctx, options...)
 }
 
-// NewReadWriter returns instance of ConfigReadWriter interface.
-// ConfigReadWriter should be used by clients who wish to read and write config
-// and are not going to perform a watch
-func NewReadWriter(ctx context.Context, options ...interface{}) (configio.ConfigReadWriter, error) {
-	return newManager(ctx, options...)
-}
-
 // NewWatcher returns an instance of ConfigWatcher interface.
 // ConfigWatcher should be used by clients who only wish to watch config changes
 func NewWatcher(ctx context.Context, options ...interface{}) (configio.ConfigWatcher, error) {
+	return newManager(ctx, options...)
+}
+
+// NewManagerWithWatch returns instance of ConfigManagerWithWatch interface.
+// ConfigManagerWithWatch should be used by clients requiring full config management
+// features
+func NewManagerWithWatch(ctx context.Context, options ...interface{}) (configio.ConfigManagerWithWatch, error) {
 	return newManager(ctx, options...)
 }
 

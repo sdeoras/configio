@@ -51,11 +51,11 @@ func TestNewReader(t *testing.T) {
 	}
 }
 
-func TestNewReadWriter(t *testing.T) {
+func TestNewManager(t *testing.T) {
 	config := new(simpleconfig.Config).Rand()
 	config2 := new(simpleconfig.Config).Init(config.Key())
 
-	readWriter, err := NewReadWriter(context.Background())
+	readWriter, err := NewManager(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,7 @@ func TestNewWatcher(t *testing.T) {
 	a, b, c := callbackFunc("a"), callbackFunc("b"), callbackFunc("c")
 	config := new(simpleconfig.Config).Rand()
 
-	manager, err := NewManager(context.Background())
+	manager, err := NewManagerWithWatch(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}

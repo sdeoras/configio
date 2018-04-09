@@ -14,8 +14,8 @@ type Config interface {
 	Unmarshal(b []byte) error
 }
 
-// ConfigManager defines an interface to access config params
-type ConfigManager interface {
+// ConfigManagerWithWatch defines an interface to access config params
+type ConfigManagerWithWatch interface {
 	// Unmarshal unmarshals into marshaler
 	Unmarshal(config Config) error
 	// Marshal marshals data in marshaler
@@ -26,8 +26,8 @@ type ConfigManager interface {
 	io.Closer
 }
 
-// ConfigReadWriter defines an interface to perform read/write on config params
-type ConfigReadWriter interface {
+// ConfigManager defines an interface to perform read/write on config params
+type ConfigManager interface {
 	// Unmarshal unmarshals into marshaler
 	Unmarshal(config Config) error
 	// Marshal marshals data in marshaler
