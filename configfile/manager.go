@@ -27,6 +27,7 @@ type manager struct {
 	watcher     *fsnotify.Watcher
 	watchCtx    context.Context
 	watchCancel context.CancelFunc
+	watchClosed bool
 }
 
 // Init initializes newly instantiated manager
@@ -40,10 +41,20 @@ func (m *manager) Init(ctx context.Context) *manager {
 
 // Close closes and performs cleanup if any
 func (m *manager) Close() error {
-	// cancel watch context
-	m.watchCancel()
+	return m.closeWatch()
+}
 
-	return m.watcher.Close()
+// close watch
+func (m *manager) closeWatch() error {
+	if !m.watchClosed {
+		// cancel watch context
+		m.watchCancel()
+		m.watchClosed = true
+
+		return m.watcher.Close()
+	} else {
+		return nil
+	}
 }
 
 // setConfigFile sets location of config file other than the default
@@ -69,6 +80,7 @@ func (m *manager) setConfigFile(fileName string) error {
 
 func (m *manager) initWatch() error {
 	log := m.log.WithField("func", "initWatch")
+	m.watchClosed = false
 
 	// recreate new watcher and context
 	if watcher, err := fsnotify.NewWatcher(); err != nil {

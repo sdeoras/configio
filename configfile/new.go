@@ -13,27 +13,63 @@ import (
 // ConfigManager should be used by clients who wish to read and write config
 // and are not going to perform a watch
 func NewManager(ctx context.Context, options ...interface{}) (configio.ConfigManager, error) {
-	return newManager(ctx, options...)
+	manager, err := newManager(ctx, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := manager.closeWatch(); err != nil {
+		return nil, err
+	}
+
+	return manager, nil
 }
 
 // NewReader returns instance of ConfigReader interface.
 // ConfigReader should be used by clients who just wish to read config and/or
 // for clients who should be given read permissions only
 func NewReader(ctx context.Context, options ...interface{}) (configio.ConfigReader, error) {
-	return newManager(ctx, options...)
+	manager, err := newManager(ctx, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := manager.closeWatch(); err != nil {
+		return nil, err
+	}
+
+	return manager, nil
 }
 
 // NewWriter returns instance of ConfigWriter interface.
 // ConfigWriter should be used by clients who just wish to write config and/or
 // for clients who should be given write permissions only
 func NewWriter(ctx context.Context, options ...interface{}) (configio.ConfigWriter, error) {
-	return newManager(ctx, options...)
+	manager, err := newManager(ctx, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := manager.closeWatch(); err != nil {
+		return nil, err
+	}
+
+	return manager, nil
 }
 
 // NewWatcher returns an instance of ConfigWatcher interface.
 // ConfigWatcher should be used by clients who only wish to watch config changes
 func NewWatcher(ctx context.Context, options ...interface{}) (configio.ConfigWatcher, error) {
-	return newManager(ctx, options...)
+	manager, err := newManager(ctx, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := manager.closeWatch(); err != nil {
+		return nil, err
+	}
+
+	return manager, nil
 }
 
 // NewManagerWithWatch returns instance of ConfigManagerWithWatch interface.
