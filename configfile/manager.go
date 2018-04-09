@@ -199,8 +199,15 @@ func (m *manager) Watch(name string, data interface{}, f func(ctx context.Contex
 // watch watches for file changes
 func (m *manager) watch() {
 	log := m.log.WithField("func", "watch")
+	if m.watchClosed {
+		return
+	}
+
 	log.Info("starting watch")
 	for {
+		if m.watchClosed {
+			break
+		}
 		select {
 		case event := <-m.watcher.Events:
 			log.WithField("file", event.Name).Info(event.Op)
